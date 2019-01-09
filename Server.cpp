@@ -78,7 +78,9 @@ string recvMsg(int connfd){
 
 	bzero(buf, sizeof(buf)); // Very important for clearing the buffer. 
 							 // Without this the buffer contains random garbage data
-	read(connfd,buf,1000);
+	int p = read(connfd,buf,1000);
+	if(p<=0)
+		return "ENDIT";
 	string s(buf);
 	return s;
 }
@@ -90,7 +92,7 @@ int recvFile(int connfd, string fileName){
 		string s = recvMsg(connfd);
 		if(s.find("ENDIT") != std::string::npos)
 			break;
-		fout<<s<<" ";
+		fout<<s;
 	}
 	fout.close();
 	return 1;

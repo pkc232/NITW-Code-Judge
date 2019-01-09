@@ -22,6 +22,8 @@
 
 using namespace std;
 
+#define bufferSize 100 
+
 int establishConnection(string IPServ, int port_no){
 	int sfd;
 	struct sockaddr_in serv_addr;
@@ -43,22 +45,26 @@ int establishConnection(string IPServ, int port_no){
 	return sfd;
 }
 
-void sendMsg(int sfd, string msg){
-	int len = msg.length();
-	write(sfd, msg.c_str(), len);
+void sendMsg(int sfd, char buf[bufferSize]){
+	write(sfd, buf, bufferSize);
 }
 
 int sendFile(int sfd, string fileName){
 	ifstream fin;
 	fin.open(fileName.c_str());
 
-	string wrd;
+
+	char buf[bufferSize];
+	bzero(buf, sizeof(buf));
+	
 	while(!fin.eof()){
-		fin>>wrd;
-		sendMsg(sfd, wrd);
-		sleep(0.5);
+		fin.read(buf, bufferSize);
+		// cout<<"read "<<buf<<endl;
+		sendMsg(sfd, buf);
+		// cout<<"Sent "<<buf<<endl;
+		bzero(buf, sizeof(buf));
+		sleep(0.1);
 	}
-	sendMsg(sfd, "ENDIT");
 	fin.close();
 	cout<<"File Sent\n";
 }
