@@ -22,7 +22,7 @@
 
 using namespace std;
 
-void establishConnection(string IPServ, int port_no){
+int establishConnection(string IPServ, int port_no){
 	int sfd;
 	struct sockaddr_in serv_addr;
 
@@ -39,15 +39,36 @@ void establishConnection(string IPServ, int port_no){
 	if(connect(sfd , (struct sockaddr *)&serv_addr , sizeof(serv_addr))==-1)
 	perror("\n connect : ");
 	else printf("\nconnect succesful");
+
+	return sfd;
 }
 
+void sendMsg(int sfd, string msg){
+	int len = msg.length();
+	write(sfd, msg.c_str(), len);
+}
 
+int sendFile(int sfd, string fileName){
+	ifstream fin;
+	fin.open(fileName.c_str());
+
+	string wrd;
+	while(!fin.eof()){
+		fin>>wrd;
+		sendMsg(sfd, wrd);
+		sleep(0.5);
+	}
+	sendMsg(sfd, "ENDIT");
+	fin.close();
+	cout<<"File Sent\n";
+}
 int main(int argc, char const *argv[])
 {
 	string IPServ = "192.168.43.44";
 	int port_no = 8080;
 
-	establishConnection(IPServ, port_no);
+	int sfd = establishConnection(IPServ, port_no);
+	sendFile(sfd, "wikiSend.txt");
 
 	return 0;
 }

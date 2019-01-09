@@ -23,13 +23,14 @@
 using namespace std;
 #define MAX_PENDING_REQUESTS 10
 
-void acceptConnection(int listenfd){
+int acceptConnection(int listenfd){
 
 	int connfd;
 	struct sockaddr_in cliaddr;
 	socklen_t lencli = sizeof(cliaddr);
 	connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&lencli);
 	printf("Connection from %s,port %d\n",inet_ntoa(cliaddr.sin_addr),ntohs(cliaddr.sin_port));
+	return connfd;
 }
 
 int initializeListener(string IP, int port_no){
@@ -72,6 +73,29 @@ int initializeListener(string IP, int port_no){
 	return listenfd;
 }
 
+string recvMsg(int connfd){
+	char buf[1000];
+
+	bzero(buf, sizeof(buf)); // Very important for clearing the buffer. 
+							 // Without this the buffer contains random garbage data
+	read(connfd,buf,1000);
+	string s(buf);
+	return s;
+}
+
+int recvFile(int connfd, string fileName){
+	ofstream fout;
+	fout.open(fileName.c_str());
+	while(1){
+		string s = recvMsg(connfd);
+		if(s.find("ENDIT") != std::string::npos)
+			break;
+		fout<<s<<" ";
+	}
+	fout.close();
+	return 1;
+}
+
 int main(int argc, char const *argv[])
 {
 	
@@ -79,7 +103,10 @@ int main(int argc, char const *argv[])
 	int port_no = 8080;
 
 	int listenfd = initializeListener(IP, port_no);
-	acceptConnection(listenfd);
+	int connfd = acceptConnection(listenfd);
 
+	int p = recvFile(connfd, "wikiReceive.txt");
+	if(p)
+		cout<<"File successfully received\n";
 	return 0;
 }
