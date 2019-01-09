@@ -22,6 +22,7 @@
 
 using namespace std;
 #define MAX_PENDING_REQUESTS 10
+#define BUFFER_SIZE 1000
 
 int acceptConnection(int listenfd){
 
@@ -74,11 +75,11 @@ int initializeListener(string IP, int port_no){
 }
 
 string recvMsg(int connfd){
-	char buf[1000];
+	char buf[BUFFER_SIZE];
 
 	bzero(buf, sizeof(buf)); // Very important for clearing the buffer. 
 							 // Without this the buffer contains random garbage data
-	int p = read(connfd,buf,1000);
+	int p = read(connfd,buf,BUFFER_SIZE);
 	if(p<=0)
 		return "ENDIT";
 	string s(buf);
@@ -98,6 +99,23 @@ int recvFile(int connfd, string fileName){
 	return 1;
 }
 
+int isSame(string &fileName1, string &fileName2){
+
+	ifstream f1, f2;
+	f1.open(fileName1.c_str());
+	f2.open(fileName2.c_str());
+	char c;
+	char buf1[BUFFER_SIZE], buf2[BUFFER_SIZE];
+	while(!f1.eof() && !f2.eof()){
+		f1.read(buf1, BUFFER_SIZE);
+		f2.read(buf2, BUFFER_SIZE);
+
+		if(strcmp(buf1,buf2))
+			return 0;		
+	}
+	return 1;
+}
+
 int main(int argc, char const *argv[])
 {
 	
@@ -106,9 +124,15 @@ int main(int argc, char const *argv[])
 
 	int listenfd = initializeListener(IP, port_no);
 	int connfd = acceptConnection(listenfd);
-
-	int p = recvFile(connfd, "wikiReceive.txt");
+	string opfile = "wikiReceive.txt", ipfile = "wikiSend.txt";
+	int p = recvFile(connfd, opfile);
 	if(p)
 		cout<<"File successfully received\n";
+
+	if(isSame(opfile, ipfile))
+		cout<<"It is same\n";
+	else
+		cout<<"It is different\n";
+
 	return 0;
 }
