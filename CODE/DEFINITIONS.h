@@ -30,5 +30,6 @@
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 #include <netinet/udp.h>
+#include <sys/wait.h>
 
 #include <bits/stdc++.h>

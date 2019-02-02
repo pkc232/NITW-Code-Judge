@@ -22,8 +22,6 @@ Functionalities to be incorporated:
 
 using namespace std;
 
-#define bufferSize 100 		//This is the number of bytes sent at a time on the 
-							//stream.
 
 
 int establishConnection(string IPServ, int port_no){
@@ -69,7 +67,7 @@ int establishConnection(string IPServ, int port_no){
 	return sfd;
 }
 
-int sendMsg(int fd, char buf[bufferSize]){
+int sendMsg(int fd, char buf[BUFFER_SIZE]){
 	/**
 		This method is used to send a message 
 		or a character bytestream on the sfd
@@ -83,7 +81,7 @@ int sendMsg(int fd, char buf[bufferSize]){
 		Include error checking.
 	**/
 
-	int er = write(fd, buf, bufferSize);
+	int er = write(fd, buf, BUFFER_SIZE);
 
 	if(er == -1){
 		//Some error occurred in writing the buffer.
@@ -102,11 +100,11 @@ int sendFile(int sfd, string fileName){
 	ifstream fin;
 	fin.open(fileName.c_str());
 
-	char buf[bufferSize];
+	char buf[BUFFER_SIZE];
 	bzero(buf, sizeof(buf));
 	
 	while(!fin.eof()){
-		fin.read(buf, bufferSize);
+		fin.read(buf, BUFFER_SIZE);
 		sendMsg(sfd, buf);
 		bzero(buf, sizeof(buf));
 		sleep(0.1);
@@ -115,10 +113,29 @@ int sendFile(int sfd, string fileName){
 	fin.close();
 }
 
-// int checkSolution(int sfd, string fileName){
-// 	sendMsg(sfd, fileName.c_str());
-// 	sendFile(sfd, fileName);
-// }
+string recvMsg(int connfd){
+	/*
+		This method reads the buffer and returns it as a 
+		string.
+
+		Params:
+		@connfd: The file descriptor on which the server and client communicates.
+
+		Return:
+
+	*/
+
+	char buf[BUFFER_SIZE];
+
+	bzero(buf, sizeof(buf)); // Very important for clearing the buffer. 
+							 // Without this the buffer contains random garbage data
+	int p = read(connfd,buf,BUFFER_SIZE);
+	if(p<=0)
+		return "ENDIT";
+	string s(buf);
+	return s;
+}
+
 
 int main(int argc, char const *argv[])
 {
@@ -131,6 +148,9 @@ int main(int argc, char const *argv[])
 	client_file_path += "CLIENT_FILES/";
 	client_file_path += "sample.cpp";
 	sendFile(sfd, client_file_path);
-
+	close(sfd);
+	// sleep(5);
+	// string msg = recvMsg(sfd);
+	// cout<<msg<<endl;
 	return 0;
 }
