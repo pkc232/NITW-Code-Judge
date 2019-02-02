@@ -1,3 +1,5 @@
+/*include all the necessary libraries*/
+
 #include <time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -53,7 +55,6 @@ int sendFile(int sfd, string fileName){
 	ifstream fin;
 	fin.open(fileName.c_str());
 
-
 	char buf[bufferSize];
 	bzero(buf, sizeof(buf));
 	
@@ -65,16 +66,23 @@ int sendFile(int sfd, string fileName){
 		bzero(buf, sizeof(buf));
 		sleep(0.1);
 	}
+
 	fin.close();
 	cout<<"File Sent\n";
 }
+
+int checkSolution(int sfd, string fileName){
+	sendMsg(sfd, fileName.c_str());
+	sendFile(sfd, fileName);
+}
+
 int main(int argc, char const *argv[])
 {
 	string IPServ = "192.168.43.44";
 	int port_no = 8080;
 
 	int sfd = establishConnection(IPServ, port_no);
-	sendFile(sfd, "wikiSend.txt");
+	sendFile(sfd, "op1.txt");
 
 	return 0;
 }

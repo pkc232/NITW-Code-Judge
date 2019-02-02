@@ -1,24 +1,32 @@
-#include <time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <pthread.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/shm.h>
-#include <unistd.h>
-#include <sys/un.h>
-#include <netinet/ip.h>
-#include <arpa/inet.h>
-#include <pcap.h>
-#include <errno.h>
-#include <netinet/if_ether.h>
-#include <net/ethernet.h>
-#include <netinet/ether.h>
-#include <netinet/udp.h>
+/****
 
-#include <bits/stdc++.h>
+
+This is the SERVER implementation, i.e. the code which 
+would be run on the main server system.
+
+Functionalities to be incorporated:
+1.	Keep listening to the requests from the clients. 
+2.	Accept the client request and establish a connection
+3.	Get the cpp file from the client and store it in temporary file
+4.	Compile the cpp file and create an executable from it. 
+	Change the file descriptors 
+5.	Run the executable on the sample test files. (open corres fds)
+6.	Get the result and send it to the client.
+7.	Store the result of the corresponding client in a database.
+
+Advanced Functionalities:
+1.	Implement a sandbox.
+
+
+@author: PKC
+
+
+****/
+
+
+
+#include "DEFINITIONS.h"
+#include "CONSTANTS.h"
 
 using namespace std;
 #define MAX_PENDING_REQUESTS 10
@@ -41,7 +49,8 @@ int acceptConnection(int listenfd){
 	struct sockaddr_in cliaddr;
 	socklen_t lencli = sizeof(cliaddr);
 	connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&lencli);
-	printf("Connection from %s,port %d\n",inet_ntoa(cliaddr.sin_addr),ntohs(cliaddr.sin_port));
+	// printf("Connection from %s,port %d\n",inet_ntoa(cliaddr.sin_addr),ntohs(cliaddr.sin_port));
+	
 	return connfd;
 }
 
@@ -64,11 +73,11 @@ int initializeListener(string IP, int port_no){
 
 	if(listenfd<0)
 	{
-		cout<<"Socket not created\n";
+		//Socket not created
 		return 0;
 	}
 
-	printf("Server created socket %d\n",listenfd);
+	//Socket created
 
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = inet_addr(IP.c_str());
@@ -82,7 +91,7 @@ int initializeListener(string IP, int port_no){
 		return 0;
 	}
 
-	printf("Binding done %d\n",bndret);
+	//Binding done
 
 	int listret = listen(listenfd,MAX_PENDING_REQUESTS);
 
@@ -120,7 +129,16 @@ string recvMsg(int connfd){
 	return s;
 }
 
-int recvFile(int connfd, string fileName){	
+int recvFile(int connfd, string fileName){
+	/**
+		This method is used to receive a file on the
+		connection file descriptor and store it in the 
+		fileName.
+		Params:
+		@connfd:	The fd on which the file is received
+		@fileName:	The temporary file in which the received file is stored.
+
+	**/
 	ofstream fout;
 	fout.open(fileName.c_str());
 	while(1){
@@ -173,15 +191,14 @@ int main(int argc, char const *argv[])
 	}
 
 	int connfd = acceptConnection(listenfd);
-	string opfile = "wikiReceive.txt", ipfile = "wikiSend.txt";
-	int p = recvFile(connfd, opfile);
+
+	string server_file_path = FILE_BASE_PATH;
+	server_file_path += "SERVER_FILES/";
+	server_file_path += "wikiReceive.txt";
+
+	int p = recvFile(connfd, server_file_path);
 	if(p)
 		cout<<"File successfully received\n";
-
-	if(isSame(opfile, ipfile))
-		cout<<"It is same\n";
-	else
-		cout<<"It is different\n";
 
 	return 0;
 }
