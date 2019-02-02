@@ -10,9 +10,10 @@ Functionalities to be incorporated:
 3.	Get the cpp file from the client and store it in temporary file
 4.	Compile the cpp file and create an executable from it. 
 	Change the file descriptors 
-5.	Run the executable on the sample test files. (open corres fds)
+5.	Run the executable on the sample test files. (open corresponding fds)
 6.	Get the result and send it to the client.
 7.	Store the result of the corresponding client in a database.
+8.	Maintain separate threads for each checking which is being done.
 
 Advanced Functionalities:
 1.	Implement a sandbox.
@@ -177,6 +178,55 @@ int checkSolution(int connfd){
 	return isSame(fileName, newfile);
 }
 
+int compileCode(string cpp_file_source){
+	string binary_file_path = FILE_BASE_PATH;
+	binary_file_path += "BINARY/cppbin";
+
+	string compilation_command	 = "g++ ";
+	compilation_command 		+= cpp_file_source;
+	compilation_command			+= " -o ";
+	compilation_command			+= binary_file_path;  
+
+	string error_file_path = FILE_BASE_PATH;
+	error_file_path += "ERROR_FILES/errorfile.txt";
+
+	//This is to redirect the compilation error to the error file.
+	compilation_command += " > ";
+	compilation_command += error_file_path;
+	compilation_command += " 2>&1 ";
+
+	// cout<<"Compilation command "<<compilation_command<<endl;
+	system(compilation_command.c_str());
+}
+
+int executeCode(){
+	string binary_file_path = FILE_BASE_PATH;
+	binary_file_path += "BINARY/cppbin";
+
+	int pid = fork();
+
+	if(pid == 0){
+		cout<<"In child executing the exc\n";
+		string server_file_path = FILE_BASE_PATH;
+		server_file_path += "SERVER_FILES/";
+		
+		string servin = server_file_path;
+		servin += "ip.txt";
+		close(0);
+		int fdr = open(servin.c_str(), O_RDONLY);
+		close(1);
+		server_file_path += "op.txt";
+		int fdw = open(server_file_path.c_str(), O_WRONLY);
+		execv(binary_file_path.c_str(),NULL);
+	}
+	else
+	{
+		wait();
+
+		cout<<"Done\n";
+	}
+}
+
 int main(int argc, char const *argv[])
 {
 	
@@ -194,11 +244,14 @@ int main(int argc, char const *argv[])
 
 	string server_file_path = FILE_BASE_PATH;
 	server_file_path += "SERVER_FILES/";
-	server_file_path += "wikiReceive.txt";
+	server_file_path += "sampleIP.cpp";
 
 	int p = recvFile(connfd, server_file_path);
 	if(p)
 		cout<<"File successfully received\n";
 
+	cout<<"Compiling the code \n";
+	compileCode(server_file_path);
+	executeCode();
 	return 0;
 }
