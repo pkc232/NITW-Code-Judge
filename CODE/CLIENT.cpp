@@ -23,6 +23,12 @@ Functionalities to be incorporated:
 using namespace std;
 
 
+void set_reuse_addr(int sockfd){
+	int enable = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    	cout<<"setsockopt(SO_REUSEADDR) failed"<<endl;
+}
+
 
 int establishConnection(string IPServ, int port_no){
 	/**
@@ -52,7 +58,7 @@ int establishConnection(string IPServ, int port_no){
 	}
 
 	//Socket created succesfully
-
+	set_reuse_addr(sfd);
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_port = htons(port_no);
@@ -136,6 +142,12 @@ string recvMsg(int connfd){
 	return s;
 }
 
+void check(int sfd){
+	// sendMsg(sfd, "Hello from client");
+	string p = recvMsg(sfd);
+	cout<<p<<endl;
+	close(sfd);
+}
 
 int main(int argc, char const *argv[])
 {
@@ -143,14 +155,20 @@ int main(int argc, char const *argv[])
 	int port_no = 8080;
 
 	int sfd = establishConnection(IPServ, port_no);
+
 	
+	
+
 	string client_file_path = FILE_BASE_PATH;
 	client_file_path += "CLIENT_FILES/";
 	client_file_path += "sample.cpp";
+	cout<<"Sending file\n";
 	sendFile(sfd, client_file_path);
+	sendMsg(sfd, "ENDIT");
+
+
+	string msg = recvMsg(sfd);
+	cout<<msg<<endl;
 	close(sfd);
-	// sleep(5);
-	// string msg = recvMsg(sfd);
-	// cout<<msg<<endl;
 	return 0;
 }

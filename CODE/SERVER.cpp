@@ -33,7 +33,11 @@ Advanced Functionalities:
 using namespace std;
 #define MAX_PENDING_REQUESTS 10
 
-
+void set_reuse_addr(int sockfd){
+	int enable = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    	cout<<"setsockopt(SO_REUSEADDR) failed"<<endl;
+}
 
 int acceptConnection(int listenfd){
 	/* 
@@ -79,6 +83,7 @@ int initializeListener(string IP, int port_no){
 		return 0;
 	}
 
+	set_reuse_addr(listenfd);
 	//Socket created
 
 	servaddr.sin_family = AF_INET;
@@ -150,6 +155,7 @@ int recvFile(int connfd, string fileName){
 		fout<<s;
 	}
 	fout.close();
+	cout<<"Done reading the file\n";
 	return 1;
 }
 
@@ -215,7 +221,7 @@ int compileCode(string cpp_file_source){
 	// cout<<"Compilation command "<<compilation_command<<endl;
 	system(compilation_command.c_str());
 
-	if(!emptyfile(binary_file_path))
+	if(emptyfile(error_file_path))
 		return 1;
 	else
 		return 0;
@@ -276,6 +282,14 @@ int sendMsg(int fd, const char buf[BUFFER_SIZE]){
 	return 0;
 }
 
+void check(int connfd){
+	// string msg = recvMsg(connfd);
+	// cout<<msg<<endl;
+	// while(1);
+	// sleep(5);
+	sendMsg(connfd, "Hello from server");
+	close(connfd);
+}
 
 int main(int argc, char const *argv[])
 {
@@ -292,6 +306,8 @@ int main(int argc, char const *argv[])
 
 	int connfd = acceptConnection(listenfd);
 
+	
+
 	string temp_ip_file = SERVER_FILE_PATH;
 	temp_ip_file += "sampleIP.cpp";
 
@@ -299,38 +315,33 @@ int main(int argc, char const *argv[])
 	if(p)
 		cout<<"File successfully received\n";
 
-	cout<<"Compiling the code \n";
 	int cp = compileCode(temp_ip_file);
 	string msgToSend = "";
 	if(cp){
 		executeCode();
-		cout<<"Done executing\n";
 	}
 	else{
-		cout<<"Compilation error\n";
-		msgToSend = "Compilation Error";
-		// sendMsg(connfd, msgToSend.c_str());
+		msgToSend = "Compilation error\n";
+		sendMsg(connfd, msgToSend.c_str());
+		return 0;
 	}
 
-	close(connfd);
+
 	string user_op_file_path = SERVER_FILE_PATH, actual_op_file_path = SERVER_FILE_PATH;
 	user_op_file_path 		+= "op.txt";
 	actual_op_file_path 	+= "actual_op.txt";
 
-	cout<<"Checking for similarity\n";
 	if(isSame(user_op_file_path, actual_op_file_path))
 	{
-		cout<<"THey are same\n";
 		msgToSend = "Correct";
-		// sendMsg(connfd, msgToSend.c_str());
+		sendMsg(connfd, msgToSend.c_str());
 	}
 	else
 	{
-		cout<<"Wrong Answer\n";
 		msgToSend = "Wrong Answer";
-		// sendMsg(connfd, msgToSend.c_str());
+		sendMsg(connfd, msgToSend.c_str());
 	}
-
+	close(connfd);
 
 	return 0;
 }
