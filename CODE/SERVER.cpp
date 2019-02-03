@@ -12,8 +12,9 @@ Functionalities to be incorporated:
 	Change the file descriptors 
 5.	Run the executable on the sample test files. (open corresponding fds)
 6.	Get the result and send it to the client.
-7.	Store the result of the corresponding client in a database.
-8.	Maintain separate threads for each checking which is being done.
+7.	Remove all the temporary files created.
+8.	Store the result of the corresponding client in a database.
+9.	Maintain separate threads for each checking which is being done.
 
 Advanced Functionalities:
 1.	Implement a sandbox.
@@ -33,7 +34,8 @@ Advanced Functionalities:
 
 using namespace std;
 
-
+int CHILD_PID = -1;
+int TIME_LIMIT = 3;
 
 int isSame(string &fileName1, string &fileName2){
 	/**
@@ -65,9 +67,9 @@ int emptyfile(string filepath){
 
 string redirect_error_to_file(string command, string error_file_path){
 	//This is to redirect the compilation error to the error file.
-	command += " > ";
+	command += " 2> ";
 	command += error_file_path;
-	command += " 2>&1 ";
+	// command += " 2>&1 ";
 	return command;
 }
 
@@ -99,13 +101,19 @@ int compileCode(string cpp_file_source){
 
 	
 	compilation_command			= redirect_error_to_file(compilation_command, error_file_path);
-	// cout<<"Compilation command "<<compilation_command<<endl;
+	
 	system(compilation_command.c_str());
 
 	if(emptyfile(error_file_path))
 		return 1;
 	else
 		return 0;
+}
+
+void kill_child(int sig)
+{
+	cout<<"killing "<<CHILD_PID<<endl;
+    kill(CHILD_PID,SIGKILL);
 }
 
 int executeCode(){
@@ -132,25 +140,30 @@ int executeCode(){
 		servout += "op.txt";
 		int fdw = open(servout.c_str(), O_WRONLY);
 
-		string execute_command 	= "";
-		execute_command			+= binary_file_path;
-		execute_command			= redirect_error_to_file(execute_command, error_file_path);
-
-		system(execute_command.c_str());
-		return 0;
+		execv(binary_file_path.c_str(), NULL);
 	}
 	else
 	{
-		int w = wait(NULL);
-
-		if(emptyfile(error_file_path))
+		signal(SIGALRM,(void (*)(int))kill_child);
+		CHILD_PID = pid;
+		alarm(TIME_LIMIT);
+		int status;
+		int w = wait(&status);
+		if(status == 9){
+			//Time Limit Exceeded
+			return 2;
+		}
+		else if(status == 0){
+			//Execution Done Completely
 			return 1;
-		else
+		}
+		else{
+			//Run time error
 			return 0;
-		cout<<"Done\n";
+		}
+
 	}
 }
-
 
 int main(int argc, char const *argv[])
 {
@@ -192,6 +205,12 @@ int main(int argc, char const *argv[])
 		return 0;
 	}
 
+	if(exp == 2){
+		msgToSend = "Time Limit Exceeded\n";
+		sendMsg(connfd, msgToSend.c_str());
+		// cleaup();
+		return 0;
+	}
 
 	string user_op_file_path = SERVER_FILE_PATH, actual_op_file_path = SERVER_FILE_PATH;
 	user_op_file_path 		+= "op.txt";

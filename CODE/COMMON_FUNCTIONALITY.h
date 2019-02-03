@@ -1,3 +1,15 @@
+/****
+
+This file contains the common implementation of methods
+shared by the server and client.
+
+@author:	PKC
+
+****/
+
+
+
+
 #include "DEFINITIONS.h"
 #include "CONSTANTS.h"
 
