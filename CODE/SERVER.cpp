@@ -112,6 +112,9 @@ int compileCode(string cpp_file_source){
 
 void kill_child(int sig)
 {
+	/**
+		This method is used to terminate a child process.
+	**/
 	cout<<"killing "<<CHILD_PID<<endl;
     kill(CHILD_PID,SIGKILL);
 }
@@ -168,19 +171,7 @@ int executeCode(){
 int main(int argc, char const *argv[])
 {
 	
-	string IP = "192.168.43.44";
-	int port_no = 8080;
-
-	int listenfd = initializeListener(IP, port_no);
-	if(listenfd == 0)
-	{
-		cout<<"Unable to initialize connection\n";
-		return 0;
-	}
-
-	int connfd = acceptConnection(listenfd);
-
-	
+	int connfd = 3;
 
 	string temp_ip_file = SERVER_FILE_PATH;
 	temp_ip_file += "sampleIP.cpp";

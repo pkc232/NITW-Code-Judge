@@ -1,4 +1,0 @@
-/home/pratyush/Documents/Sharing_Hub/SERVER_FILES/sampleIP.cpp: In function ‘int main(int, const char**)’:
-/home/pratyush/Documents/Sharing_Hub/SERVER_FILES/sampleIP.cpp:10:7: error: ‘name’ was not declared in this scope
-  cin>>name;
-       ^
