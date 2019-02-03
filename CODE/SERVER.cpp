@@ -29,135 +29,11 @@ Advanced Functionalities:
 
 #include "DEFINITIONS.h"
 #include "CONSTANTS.h"
+#include "COMMON_FUNCTIONALITY.h"
 
 using namespace std;
-#define MAX_PENDING_REQUESTS 10
 
-void set_reuse_addr(int sockfd){
-	int enable = 1;
-	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-    	cout<<"setsockopt(SO_REUSEADDR) failed"<<endl;
-}
 
-int acceptConnection(int listenfd){
-	/* 
-		Method which accepts connection for the server
-		Params: 
-		@listenfd:	File descriptor on which the server listens
-		
-		Return:
-		connfd:	The file descriptor on which the connection is established between
-				the server and client.The accepted FD.	
-				0 if there is some error.	
-				
-	*/
-	int connfd;
-	struct sockaddr_in cliaddr;
-	socklen_t lencli = sizeof(cliaddr);
-	connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&lencli);
-	// printf("Connection from %s,port %d\n",inet_ntoa(cliaddr.sin_addr),ntohs(cliaddr.sin_port));
-	
-	return connfd;
-}
-
-int initializeListener(string IP, int port_no){
-	/*
-		Method which intializes the socket connection of the server.
-
-		Params:
-		@IP: IP on which the server socket is to be established.
-		@port_no: The port number on which the server socket is to be established.
-
-		Return:
-		listenfd:	The listening fd on which the server listens.
-					0 if there is some error.
-
-	*/
-	struct sockaddr_in servaddr;
-	int listenfd;
-	listenfd = socket(AF_INET,SOCK_STREAM,0);
-
-	if(listenfd<0)
-	{
-		//Socket not created
-		return 0;
-	}
-
-	set_reuse_addr(listenfd);
-	//Socket created
-
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr(IP.c_str());
-	servaddr.sin_port = htons(port_no);
-
-	int bndret = bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr));
-
-	if(bndret<0)
-	{
-		cout<<"Bind failed\n";
-		return 0;
-	}
-
-	//Binding done
-
-	int listret = listen(listenfd,MAX_PENDING_REQUESTS);
-
-	if(listret<0)
-	{
-		printf("Listen failed\n");
-		return 0;
-	}
-
-	printf("Socket ready to listen %d\n",listret);
-
-	return listenfd;
-}
-
-string recvMsg(int connfd){
-	/*
-		This method reads the buffer and returns it as a 
-		string.
-
-		Params:
-		@connfd: The file descriptor on which the server and client communicates.
-
-		Return:
-
-	*/
-
-	char buf[BUFFER_SIZE];
-
-	bzero(buf, sizeof(buf)); // Very important for clearing the buffer. 
-							 // Without this the buffer contains random garbage data
-	int p = read(connfd,buf,BUFFER_SIZE);
-	if(p<=0)
-		return "ENDIT";
-	string s(buf);
-	return s;
-}
-
-int recvFile(int connfd, string fileName){
-	/**
-		This method is used to receive a file on the
-		connection file descriptor and store it in the 
-		fileName.
-		Params:
-		@connfd:	The fd on which the file is received
-		@fileName:	The temporary file in which the received file is stored.
-
-	**/
-	ofstream fout;
-	fout.open(fileName.c_str());
-	while(1){
-		string s = recvMsg(connfd);
-		if(s.find("ENDIT") != std::string::npos)
-			break;
-		fout<<s;
-	}
-	fout.close();
-	cout<<"Done reading the file\n";
-	return 1;
-}
 
 int isSame(string &fileName1, string &fileName2){
 	/**
@@ -257,39 +133,6 @@ int executeCode(){
 	}
 }
 
-
-int sendMsg(int fd, const char buf[BUFFER_SIZE]){
-	/**
-		This method is used to send a message 
-		or a character bytestream on the sfd
-		sent as parameter.
-		
-		Params:
-		@fd:	The file descriptor on which the message has 
-				to be sent.
-		@buf:	The character buffer or message which needs to be sent.
-
-		Include error checking.
-	**/
-
-	int er = write(fd, buf, BUFFER_SIZE);
-
-	if(er == -1){
-		//Some error occurred in writing the buffer.
-		return -1; 
-	}
-
-	return 0;
-}
-
-void check(int connfd){
-	// string msg = recvMsg(connfd);
-	// cout<<msg<<endl;
-	// while(1);
-	// sleep(5);
-	sendMsg(connfd, "Hello from server");
-	close(connfd);
-}
 
 int main(int argc, char const *argv[])
 {
