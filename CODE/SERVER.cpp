@@ -63,6 +63,14 @@ int emptyfile(string filepath){
 	return (pFile.peek() == std::ifstream::traits_type::eof());
 }
 
+string redirect_error_to_file(string command, string error_file_path){
+	//This is to redirect the compilation error to the error file.
+	command += " > ";
+	command += error_file_path;
+	command += " 2>&1 ";
+	return command;
+}
+
 int compileCode(string cpp_file_source){
 	/**
 		This method takes a cpp_file as a program 
@@ -89,11 +97,8 @@ int compileCode(string cpp_file_source){
 	string error_file_path = FILE_BASE_PATH;
 	error_file_path += "ERROR_FILES/errorfile.txt";
 
-	//This is to redirect the compilation error to the error file.
-	compilation_command += " > ";
-	compilation_command += error_file_path;
-	compilation_command += " 2>&1 ";
-
+	
+	compilation_command			= redirect_error_to_file(compilation_command, error_file_path);
 	// cout<<"Compilation command "<<compilation_command<<endl;
 	system(compilation_command.c_str());
 
@@ -111,6 +116,8 @@ int executeCode(){
 	**/
 	string binary_file_path = FILE_BASE_PATH;
 	binary_file_path += "BINARY/cppbin";
+	string error_file_path = FILE_BASE_PATH;
+	error_file_path += "ERROR_FILES/errorfile.txt";
 
 	int pid = fork();
 
@@ -124,11 +131,22 @@ int executeCode(){
 		close(1);
 		servout += "op.txt";
 		int fdw = open(servout.c_str(), O_WRONLY);
-		execv(binary_file_path.c_str(),NULL);
+
+		string execute_command 	= "";
+		execute_command			+= binary_file_path;
+		execute_command			= redirect_error_to_file(execute_command, error_file_path);
+
+		system(execute_command.c_str());
+		return 0;
 	}
 	else
 	{
 		int w = wait(NULL);
+
+		if(emptyfile(error_file_path))
+			return 1;
+		else
+			return 0;
 		cout<<"Done\n";
 	}
 }
@@ -160,11 +178,16 @@ int main(int argc, char const *argv[])
 
 	int cp = compileCode(temp_ip_file);
 	string msgToSend = "";
-	if(cp){
-		executeCode();
-	}
-	else{
+	if(cp == 0){
 		msgToSend = "Compilation error\n";
+		sendMsg(connfd, msgToSend.c_str());
+		return 0;
+	}
+	
+	int exp = executeCode();
+
+	if(exp == 0){
+		msgToSend = "Runtime error\n";
 		sendMsg(connfd, msgToSend.c_str());
 		return 0;
 	}
