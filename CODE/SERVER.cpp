@@ -7,6 +7,9 @@ would be run on the main server system.
 Functionalities to be incorporated:
 1.	Keep listening to the requests from the clients. 
 2.	Accept the client request and establish a connection
+
+//The above two functionalities separated out to the super server.
+
 3.	Get the cpp file from the client and store it in temporary file
 4.	Compile the cpp file and create an executable from it. 
 	Change the file descriptors 
@@ -15,6 +18,9 @@ Functionalities to be incorporated:
 7.	Remove all the temporary files created.
 8.	Store the result of the corresponding client in a database.
 9.	Maintain separate threads for each checking which is being done.
+// Rather than threads there is a separate process for each checking being done.
+
+Add a timestamp to files to make them unique.
 
 Advanced Functionalities:
 1.	Implement a sandbox.
@@ -36,6 +42,41 @@ using namespace std;
 
 int CHILD_PID = -1;
 int TIME_LIMIT = 3;
+string QNO, ROLLNO;
+
+
+string CPP_SOURCE_FILE_PATH;
+string BINARY_FILE_PATH;
+string ACTUAL_IP_FILE_PATH;
+string ACTUAL_OP_FILE_PATH;
+string USER_OP_FILE_PATH;
+string ERROR_FILE_PATH;
+
+
+string generate_temp_file_path(){
+	/**
+		This method generates a skeleton of the 
+		temporary file to be created with the given 
+		QNO and ROLLNO.
+	**/
+	string temp_ip_file = TEMP_FILE_PATH;
+	temp_ip_file		+= ROLLNO;
+	temp_ip_file		+= "_";
+	temp_ip_file		+= QNO;
+	return temp_ip_file;
+}
+
+void remove_file(string filepath){
+	/**
+		This method is used to delete a file 
+		with the given filepath.
+	**/
+	int status = remove(filepath.c_str());
+	if(status == 0)
+	{
+		cout<<"File deleted successfully\n";
+	}
+}
 
 int isSame(string &fileName1, string &fileName2){
 	/**
@@ -49,6 +90,8 @@ int isSame(string &fileName1, string &fileName2){
 	while(!f1.eof() && !f2.eof()){
 		f1.read(buf1, BUFFER_SIZE);
 		f2.read(buf2, BUFFER_SIZE);
+		cout<<"in file 1"<<buf1<<endl;
+		cout<<"in file 2"<<buf2<<endl;
 
 		if(strcmp(buf1,buf2))
 			return 0;		
@@ -88,23 +131,17 @@ int compileCode(string cpp_file_source){
 
 	**/
 
-	string binary_file_path = FILE_BASE_PATH;
-	binary_file_path += "BINARY/cppbin";
-
 	string compilation_command	 = "g++ ";
-	compilation_command 		+= cpp_file_source;
+	compilation_command 		+= CPP_SOURCE_FILE_PATH;
 	compilation_command			+= " -o ";
-	compilation_command			+= binary_file_path;  
-
-	string error_file_path = FILE_BASE_PATH;
-	error_file_path += "ERROR_FILES/errorfile.txt";
+	compilation_command			+= BINARY_FILE_PATH;  
 
 	
-	compilation_command			= redirect_error_to_file(compilation_command, error_file_path);
+	compilation_command			= redirect_error_to_file(compilation_command, ERROR_FILE_PATH);
 	
 	system(compilation_command.c_str());
 
-	if(emptyfile(error_file_path))
+	if(emptyfile(ERROR_FILE_PATH))
 		return 1;
 	else
 		return 0;
@@ -125,28 +162,24 @@ int executeCode(){
 		It redirects the standard input to come from a given input file and 
 		send output to a temporary output file.
 	**/
-	string binary_file_path = FILE_BASE_PATH;
-	binary_file_path += "BINARY/cppbin";
-	string error_file_path = FILE_BASE_PATH;
-	error_file_path += "ERROR_FILES/errorfile.txt";
 
 	int pid = fork();
 
 	if(pid == 0){
 		cout<<"In child executing the exc\n";
-		
-		string servin = SERVER_FILE_PATH, servout = SERVER_FILE_PATH;
-		servin += "ip.txt";
+		// cout<<"opening "<<ACTUAL_IP_FILE_PATH<<endl;
 		close(0);
-		int fdr = open(servin.c_str(), O_RDONLY);
+		int fdr = open(ACTUAL_IP_FILE_PATH.c_str(), O_RDONLY);
+		
 		close(1);
-		servout += "op.txt";
-		int fdw = open(servout.c_str(), O_WRONLY);
 
-		execv(binary_file_path.c_str(), NULL);
+		int fdw = open(USER_OP_FILE_PATH.c_str(), O_WRONLY);
+
+		execv(BINARY_FILE_PATH.c_str(), NULL);
 	}
 	else
 	{
+		//This is to check for TLE.
 		signal(SIGALRM,(void (*)(int))kill_child);
 		CHILD_PID = pid;
 		alarm(TIME_LIMIT);
@@ -168,13 +201,79 @@ int executeCode(){
 	}
 }
 
+void extract_client_info(string client_info){
+	/**
+		This method extracts QNO and ROLLNO 
+		from the string received from the client.
+	**/
+	stringstream ss;
+	ss<<client_info;
+	ss>>ROLLNO>>QNO;
+}
+
+int is_correct(){
+	return isSame(USER_OP_FILE_PATH, ACTUAL_OP_FILE_PATH);
+}
+
+void create_file(string filepath){
+
+	string command 		=	"touch ";
+	command 			+=	filepath;
+	// cout<<"Executing the command "<<command<<endl;
+	system(command.c_str());
+}
+
+void initialize_file_paths(){
+
+	string temp_file     	=	generate_temp_file_path();
+	
+	CPP_SOURCE_FILE_PATH	=	temp_file;
+	CPP_SOURCE_FILE_PATH	+=	".cpp";
+
+	BINARY_FILE_PATH 		=	temp_file;
+
+	ACTUAL_IP_FILE_PATH		=	INPUT_FILE_PATH;
+	ACTUAL_IP_FILE_PATH		+=	QNO;
+	ACTUAL_IP_FILE_PATH		+=	".txt";
+
+	ACTUAL_OP_FILE_PATH 	=	OUTPUT_FILE_PATH;
+	ACTUAL_OP_FILE_PATH 	+= 	QNO;
+	ACTUAL_OP_FILE_PATH 	+= 	".txt";
+
+	USER_OP_FILE_PATH 		=	temp_file;
+	USER_OP_FILE_PATH 		+= 	".txt";
+
+	ERROR_FILE_PATH 		= 	temp_file;
+	ERROR_FILE_PATH 		+= 	"_error.txt";
+
+	create_file(USER_OP_FILE_PATH);
+	create_file(ERROR_FILE_PATH); 		
+
+}
+
+void cleanup(){
+	remove_file(USER_OP_FILE_PATH);
+	remove_file(ERROR_FILE_PATH);
+	remove_file(BINARY_FILE_PATH);
+	remove_file(CPP_SOURCE_FILE_PATH);
+}
+
 int main(int argc, char const *argv[])
 {
 	
-	int connfd = 3;
+	int connfd = 3;// This is from the super server.
 
-	string temp_ip_file = SERVER_FILE_PATH;
-	temp_ip_file += "sampleIP.cpp";
+	
+
+	string client_info = recvMsg(connfd);
+	cout<<"Client Info received "<<client_info<<endl;
+
+	extract_client_info(client_info);
+
+	initialize_file_paths();
+
+	string temp_ip_file		= generate_temp_file_path();
+	temp_ip_file			+= ".cpp";
 
 	int p = recvFile(connfd, temp_ip_file);
 	if(p)
@@ -193,21 +292,22 @@ int main(int argc, char const *argv[])
 	if(exp == 0){
 		msgToSend = "Runtime error\n";
 		sendMsg(connfd, msgToSend.c_str());
+		close(connfd);
+		cleanup();
 		return 0;
 	}
 
 	if(exp == 2){
 		msgToSend = "Time Limit Exceeded\n";
 		sendMsg(connfd, msgToSend.c_str());
-		// cleaup();
+		close(connfd);
+		cleanup();
 		return 0;
 	}
 
-	string user_op_file_path = SERVER_FILE_PATH, actual_op_file_path = SERVER_FILE_PATH;
-	user_op_file_path 		+= "op.txt";
-	actual_op_file_path 	+= "actual_op.txt";
+	
 
-	if(isSame(user_op_file_path, actual_op_file_path))
+	if(is_correct())
 	{
 		msgToSend = "Correct";
 		sendMsg(connfd, msgToSend.c_str());
@@ -217,7 +317,9 @@ int main(int argc, char const *argv[])
 		msgToSend = "Wrong Answer";
 		sendMsg(connfd, msgToSend.c_str());
 	}
+
 	close(connfd);
+	cleanup();
 
 	return 0;
 }
