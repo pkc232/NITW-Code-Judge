@@ -31,5 +31,9 @@
 #include <netinet/ether.h>
 #include <netinet/udp.h>
 #include <sys/wait.h>
+#include <sys/prctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <seccomp.h>
 
 #include <bits/stdc++.h>

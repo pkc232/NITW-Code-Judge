@@ -27,6 +27,11 @@ Advanced Functionalities:
 2.	Implement a time counter to give a TLE.
 
 
+Still To Implement:
+1.	A database to store the results.
+2.	Sandbox.
+
+
 @author: PKC
 
 
@@ -116,6 +121,37 @@ string redirect_error_to_file(string command, string error_file_path){
 	return command;
 }
 
+void create_sandbox(){
+	scmp_filter_ctx ctx;
+    ctx = seccomp_init(SCMP_ACT_KILL); // default action: kill
+
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigreturn), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(munmap), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mprotect), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigprocmask), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(getpid), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(gettid), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(tgkill), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(exit_group), 0);
+
+    // Don't want to give these 3 to child process but execvp requires them
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(open), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(execve), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(access), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(arch_prctl), 0);
+    seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 0);
+    
+    seccomp_load(ctx);
+}
+
+
 int compileCode(string cpp_file_source){
 	/**
 		This method takes a cpp_file as a program 
@@ -174,8 +210,10 @@ int executeCode(){
 		close(1);
 
 		int fdw = open(USER_OP_FILE_PATH.c_str(), O_WRONLY);
-
-		execv(BINARY_FILE_PATH.c_str(), NULL);
+		create_sandbox();
+		// string nbr = ".";
+		// nbr += BINARY_FILE_PATH;
+		execvp(BINARY_FILE_PATH.c_str(), NULL);
 	}
 	else
 	{
@@ -195,6 +233,7 @@ int executeCode(){
 		}
 		else{
 			//Run time error
+			cout<<"THe status is "<<status<<endl;
 			return 0;
 		}
 
@@ -216,15 +255,20 @@ int is_correct(){
 }
 
 void create_file(string filepath){
-
+	/**
+		This method is used to create an empty file 
+		with a given filepath.
+	**/
 	string command 		=	"touch ";
 	command 			+=	filepath;
-	// cout<<"Executing the command "<<command<<endl;
 	system(command.c_str());
 }
 
 void initialize_file_paths(){
+	/**
+		This method is used to store the path variables 
 
+	**/
 	string temp_file     	=	generate_temp_file_path();
 	
 	CPP_SOURCE_FILE_PATH	=	temp_file;
@@ -252,6 +296,11 @@ void initialize_file_paths(){
 }
 
 void cleanup(){
+	/**
+		This method is used to remove the tmporary
+		files.
+	**/
+	return;
 	remove_file(USER_OP_FILE_PATH);
 	remove_file(ERROR_FILE_PATH);
 	remove_file(BINARY_FILE_PATH);
