@@ -29,7 +29,7 @@ Advanced Functionalities:
 
 Still To Implement:
 1.	A database to store the results.
-2.	Sandbox.
+2.	Sandbox.(Partially Done)
 
 
 @author: PKC
@@ -42,6 +42,7 @@ Still To Implement:
 #include "DEFINITIONS.h"
 #include "CONSTANTS.h"
 #include "COMMON_FUNCTIONALITY.h"
+#include "DATABASE_MANAGER.h"
 
 using namespace std;
 
@@ -114,7 +115,9 @@ int emptyfile(string filepath){
 }
 
 string redirect_error_to_file(string command, string error_file_path){
-	//This is to redirect the compilation error to the error file.
+	/**
+		This is to redirect the compilation error to the error file.
+	**/
 	command += " 2> ";
 	command += error_file_path;
 	// command += " 2>&1 ";
@@ -122,6 +125,14 @@ string redirect_error_to_file(string command, string error_file_path){
 }
 
 void create_sandbox(){
+	/**
+		This method is used to create a sandbox which whitelists a  
+		few system calls.
+		For now as we are calling seccomp in the child before exec
+		we have to whitelist exec, open and a few system calls as well.
+		Need a turnaround for this.
+	**/
+
 	scmp_filter_ctx ctx;
     ctx = seccomp_init(SCMP_ACT_KILL); // default action: kill
 
@@ -183,8 +194,7 @@ int compileCode(string cpp_file_source){
 		return 0;
 }
 
-void kill_child(int sig)
-{
+void kill_child(int sig){
 	/**
 		This method is used to terminate a child process.
 	**/
@@ -203,7 +213,6 @@ int executeCode(){
 
 	if(pid == 0){
 		cout<<"In child executing the exc\n";
-		// cout<<"opening "<<ACTUAL_IP_FILE_PATH<<endl;
 		close(0);
 		int fdr = open(ACTUAL_IP_FILE_PATH.c_str(), O_RDONLY);
 		
@@ -211,8 +220,6 @@ int executeCode(){
 
 		int fdw = open(USER_OP_FILE_PATH.c_str(), O_WRONLY);
 		create_sandbox();
-		// string nbr = ".";
-		// nbr += BINARY_FILE_PATH;
 		execvp(BINARY_FILE_PATH.c_str(), NULL);
 	}
 	else
@@ -233,7 +240,7 @@ int executeCode(){
 		}
 		else{
 			//Run time error
-			cout<<"THe status is "<<status<<endl;
+			cout<<"The status is "<<status<<endl;
 			return 0;
 		}
 
@@ -251,6 +258,9 @@ void extract_client_info(string client_info){
 }
 
 int is_correct(){
+	/**
+		Checks the output file created by the user with the actual output file 
+	**/
 	return isSame(USER_OP_FILE_PATH, ACTUAL_OP_FILE_PATH);
 }
 
@@ -300,11 +310,20 @@ void cleanup(){
 		This method is used to remove the tmporary
 		files.
 	**/
-	return;
 	remove_file(USER_OP_FILE_PATH);
 	remove_file(ERROR_FILE_PATH);
 	remove_file(BINARY_FILE_PATH);
 	remove_file(CPP_SOURCE_FILE_PATH);
+}
+
+void update_db(){
+	/**
+		This method updates the database corresponding to the roll number
+		with the question being marked solved. 
+	**/
+	sqlite3* db = open_database("STUDENT_DATABASE");
+	update_val(ROLLNO, QNO, db);
+	close_database(db);
 }
 
 int main(int argc, char const *argv[])
@@ -360,6 +379,7 @@ int main(int argc, char const *argv[])
 	{
 		msgToSend = "Correct";
 		sendMsg(connfd, msgToSend.c_str());
+		update_db();
 	}
 	else
 	{

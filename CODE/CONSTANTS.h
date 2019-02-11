@@ -11,5 +11,7 @@
 #define TEMP_FILE_PATH		"/home/pratyush/Documents/Sharing_Hub/TEMP/"
 #define INPUT_FILE_PATH		"/home/pratyush/Documents/Sharing_Hub/INPUTS/"
 #define OUTPUT_FILE_PATH	"/home/pratyush/Documents/Sharing_Hub/OUTPUTS/"
+#define SERVER_IP 			"127.0.0.1"
+#define SERVER_PORT			8080
 
 #define BUFFER_SIZE 1000

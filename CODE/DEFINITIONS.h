@@ -35,5 +35,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <seccomp.h>
+#include <sqlite3.h> 
 
 #include <bits/stdc++.h>

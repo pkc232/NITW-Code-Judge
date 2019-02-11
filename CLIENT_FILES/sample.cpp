@@ -19,7 +19,6 @@
 #include <netinet/ether.h>
 #include <netinet/udp.h>
 #include <sys/wait.h>
-// #include <linux/seccomp.h>
 #include <sys/prctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,16 +26,10 @@
 
 using namespace std;
 
+int *p = new int[1000];
 
 int main(int argc, char const *argv[])
 {
-	// int arr[1000000000];
-	// int x = 4;
-	// int y = 0;
-	// int z = x/y;
-	// while(1);
-	// ofstream fout;
-	// fout.open("xyz.txt");
 	string s;
 	cin>>s;
 	cout<<"Hello "<<s<<endl;

@@ -30,13 +30,11 @@ int main(int argc, char const *argv[])
 		cout<<"Usage ./client <ROLLNO> <QNO> <FILENAME>"<<endl;
 		return 0;
 	}
-	// cout<<argc<<endl;
-	string IPServ = "192.168.43.44";
-	int port_no = 8080;
+	string IPServ = SERVER_IP;
+	int port_no = SERVER_PORT;
 
 	int sfd = establishConnection(IPServ, port_no);
 
-	cout<<"Sending the client details\n";
 	string ROLLNO	=	string(argv[1]);
 	string QNO		=	string(argv[2]);
 	string FILENAME =	string(argv[3]);
@@ -51,7 +49,6 @@ int main(int argc, char const *argv[])
 	string client_file_path = FILE_BASE_PATH;
 	client_file_path += "CLIENT_FILES/";
 	client_file_path += FILENAME;
-	cout<<"Sending file\n";
 	sendFile(sfd, client_file_path);
 	sendMsg(sfd, "ENDIT");
 

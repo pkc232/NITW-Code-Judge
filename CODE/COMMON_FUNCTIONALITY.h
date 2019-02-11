@@ -90,8 +90,6 @@ int acceptConnection(int listenfd){
 	struct sockaddr_in cliaddr;
 	socklen_t lencli = sizeof(cliaddr);
 	connfd = accept(listenfd,(struct sockaddr *)&cliaddr,&lencli);
-	// printf("Connection from %s,port %d\n",inet_ntoa(cliaddr.sin_addr),ntohs(cliaddr.sin_port));
-	
 	return connfd;
 }
 
