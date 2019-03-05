@@ -1,0 +1,17 @@
+The current scenario is:
+
+1.	The client connects to the superserver.
+2.	The superserver forks a new process(handler process) and assigns that process 
+	to manage the client.
+3.	The client sends the cpp file along with the question number and roll number
+	to the handler process.
+4.	The handler process then compiles the cpp code and creates a binary.
+5.	The handler then duplicates the file descriptor of I/O and excecs the binary in 
+	its child process.
+6.	The three cases are taken care by handler namely correct execution, run time and
+	time limit exceeded.
+7.	The database is updated if the result is correct. This database updation is done by
+	the handler itself. As at a time many handlers are running this might lead to concurrency 
+	issues.
+	Instead what I am planning is to have a database server running where the handler will
+	send the result and that database handler will update accordingly.

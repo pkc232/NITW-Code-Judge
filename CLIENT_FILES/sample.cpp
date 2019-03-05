@@ -30,8 +30,7 @@ int *p = new int[1000];
 
 int main(int argc, char const *argv[])
 {
-	string s;
-	cin>>s;
-	cout<<"Hello "<<s<<endl;
-	return 0;
+	int a,b;
+	cin>>a>>b;
+	cout<<a+b<<endl;
 }

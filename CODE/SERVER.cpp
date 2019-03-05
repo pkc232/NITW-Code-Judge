@@ -34,7 +34,6 @@ Still To Implement:
 
 @author: PKC
 
-
 ****/
 
 
@@ -42,7 +41,6 @@ Still To Implement:
 #include "DEFINITIONS.h"
 #include "CONSTANTS.h"
 #include "COMMON_FUNCTIONALITY.h"
-#include "DATABASE_MANAGER.h"
 
 using namespace std;
 
@@ -94,13 +92,11 @@ int isSame(string &fileName1, string &fileName2){
 	char c;
 	char buf1[BUFFER_SIZE], buf2[BUFFER_SIZE];
 	while(!f1.eof() && !f2.eof()){
-		f1.read(buf1, BUFFER_SIZE);
-		f2.read(buf2, BUFFER_SIZE);
-		cout<<"in file 1"<<buf1<<endl;
-		cout<<"in file 2"<<buf2<<endl;
-
-		if(strcmp(buf1,buf2))
-			return 0;		
+		string s1,s2;
+		f1>>s1;
+		f2>>s2;
+		if(s1 != s2)
+			return 0;
 	}
 	return 1;
 }
@@ -310,20 +306,21 @@ void cleanup(){
 		This method is used to remove the tmporary
 		files.
 	**/
+	// return;
 	remove_file(USER_OP_FILE_PATH);
 	remove_file(ERROR_FILE_PATH);
 	remove_file(BINARY_FILE_PATH);
 	remove_file(CPP_SOURCE_FILE_PATH);
 }
 
-void update_db(){
-	/**
-		This method updates the database corresponding to the roll number
-		with the question being marked solved. 
-	**/
-	sqlite3* db = open_database("STUDENT_DATABASE");
-	update_val(ROLLNO, QNO, db);
-	close_database(db);
+void send_to_database_server(){
+	int fd = open(INFO_PIPE,O_WRONLY);
+	string msg 	= 	"";
+	msg 		+=	ROLLNO;
+	msg 		+=	" ";
+	msg 		+=	QNO;
+	write(fd, msg.c_str(), 100);
+	close(fd);
 }
 
 int main(int argc, char const *argv[])
@@ -379,7 +376,8 @@ int main(int argc, char const *argv[])
 	{
 		msgToSend = "Correct";
 		sendMsg(connfd, msgToSend.c_str());
-		update_db();
+		// update_db();
+		send_to_database_server();
 	}
 	else
 	{

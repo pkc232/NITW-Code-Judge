@@ -18,18 +18,18 @@ Its functionalities:
 #include "DEFINITIONS.h"
 #include "CONSTANTS.h"
 #include "COMMON_FUNCTIONALITY.h"
-#include "DATABASE_MANAGER.h"
 
 using namespace std;
 
 int main(int argc, char const *argv[])
 {
-	sqlite3* db = open_database("STUDENT_DATABASE");
-	// create_table(db);
-	// initialize_database(db);
-	close_database(db);
+	mkfifo(INFO_PIPE,0666);
+	int dbsrvr = fork();
 
-
+	if(dbsrvr == 0){
+		execvp("./database_server",NULL);
+		return 0;
+	}
 
 	string IP = SERVER_IP;
 	int port_no = SERVER_PORT;

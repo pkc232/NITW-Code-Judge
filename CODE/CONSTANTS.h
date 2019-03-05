@@ -13,5 +13,6 @@
 #define OUTPUT_FILE_PATH	"/home/pratyush/Documents/Sharing_Hub/OUTPUTS/"
 #define SERVER_IP 			"127.0.0.1"
 #define SERVER_PORT			8080
+#define INFO_PIPE			"/tmp/info_pipe"
 
 #define BUFFER_SIZE 1000
